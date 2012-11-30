@@ -66,11 +66,10 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
   (let* ((mtime (format-date (effective-mtime source-path)))
          (name (format nil "~a-~a" (last-directory source-path) mtime))
          (out-path (make-pathname :name name :type "tgz" :defaults (truename destdir-path))))
-    (multiple-value-list (external-program:run "/bin/tar" (list "-C" (princ-to-string source-path) "."
-                                                                "-czf" (princ-to-string out-path)
-                                                                "--transform" (format nil "s#^.#~a#" name))
-                                               :output *standard-output*
-                                               :error *error-output*))
+    (external-program:run "/bin/tar" (list "-C" (princ-to-string source-path) "."
+                                           "-czf" (princ-to-string out-path)
+                                           "--transform" (format nil "s#^.#~a#" name))
+                          :output *standard-output* :error *error-output*)
     out-path))
 
 (defun find-system-files (path)
