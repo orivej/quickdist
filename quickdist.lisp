@@ -54,10 +54,11 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
     (subseq s 0 (position #\Space s))))
 
 (defun md5sum (path)
-  (external-program-word "/usr/bin/md5sum" `(,(princ-to-string path))))
+  (external-program-word "/usr/bin/md5sum" (list (princ-to-string path))))
 
 (defun tar-content-sha1 (path)
-  (external-program-word "/bin/sh" `("-c" ,(format nil "tar xOf \"~a\" | sha1sum" path))))
+  (let ((tar (external-program:start "/bin/tar" (list "-xOf" path) :output :stream)))
+    (external-program-word "/usr/bin/sha1sum" nil :input (external-program:process-output-stream tar))))
 
 (defun last-directory (path)
   (first (last (pathname-directory path))))
