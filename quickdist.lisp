@@ -113,20 +113,24 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
           (let ((system-files (find-system-files project-path)))
             (if (not system-files)
                 (warn "No .asd files found in ~a, skipping." project-path)
-                (let* ((tgz-path (archive archive-path project-path))
-                       (project-name (last-directory project-path))
-                       (project-prefix (pathname-name tgz-path))
-                       (project-url (format nil "~a/~a" archive-url (unix-filename tgz-path))))
-                  (format *error-output* "Processing ~a...~%" project-name)
-                  (format release-index "~a ~a ~a ~a ~a ~a~{ ~a~}~%"
-                          project-name project-url (file-size tgz-path) (md5sum tgz-path) (tar-content-sha1 tgz-path) project-prefix
-                          (mapcar #'unix-filename system-files))
-                  (dolist (system-file system-files)
-                    (asdf::load-sysdef (pathname-name system-file) system-file)
-                    (dolist (system-name (get-systems system-file))
-                      (format system-index "~a ~a ~a~{ ~a~}~%"
-                              project-name (pathname-name system-file) system-name
-                              (system-dependencies system-name))))))))))))
+                (restart-case
+                    (let* ((tgz-path (archive archive-path project-path))
+                           (project-name (last-directory project-path))
+                           (project-prefix (pathname-name tgz-path))
+                           (project-url (format nil "~a/~a" archive-url (unix-filename tgz-path))))
+                      (format *error-output* "Processing ~a...~%" project-name)
+                      (format release-index "~a ~a ~a ~a ~a ~a~{ ~a~}~%"
+                              project-name project-url (file-size tgz-path) (md5sum tgz-path) (tar-content-sha1 tgz-path) project-prefix
+                              (mapcar #'unix-filename system-files))
+                      (dolist (system-file system-files)
+                        (asdf::load-sysdef (pathname-name system-file) system-file)
+                        (dolist (system-name (get-systems system-file))
+                          (format system-index "~a ~a ~a~{ ~a~}~%"
+                                  project-name (pathname-name system-file) system-name
+                                  (system-dependencies system-name)))))
+                  (skip-project ()
+                    :report "Skip this project, continue with the next."
+                    nil)))))))))
 
 (defun quickdist (&key name (version :today) base-url projects-dir dists-dir)
   (let* ((version (if (not (eq version :today)) version (format-date (get-universal-time))))
