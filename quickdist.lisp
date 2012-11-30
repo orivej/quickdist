@@ -79,10 +79,19 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
          if (string= "asd" (pathname-type file)) collect file)
    #'string< :key #'pathname-name))
 
+(defvar *safe-readtable*
+  (let ((readtable (copy-readtable)))
+    (flet ((read* (stream &rest ignore)
+             (declare (ignore ignore))
+             (read stream nil (values) t)))
+      (set-dispatch-macro-character #\# #\. #'read* readtable))
+    readtable))
+
 (defun get-systems (path)
   (with-open-file (s path)
     (let* ((package (make-package (symbol-name (gensym "TMPPKG"))))
-           (*package* package))
+           (*package* package)
+           (*readtable* *safe-readtable*))
       (unwind-protect
            (sort
             (loop for form = (read s nil)
