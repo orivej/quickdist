@@ -40,10 +40,13 @@ Processing {project1}...
 Processing {project2}...
 ...
 nil
+
 cl-user> (push (hunchentoot:create-folder-dispatcher-and-handler "/" "~/dists/") hunchentoot:*dispatch-table*)
 (#<CLOSURE (lambda # :in hunchentoot:create-prefix-dispatcher) {100A30DEAB}> hunchentoot:dispatch-easy-handlers)
+
 cl-user> (hunchentoot:start (make-instance 'hunchentoot:easy-acceptor :port 4242))
 #<hunchentoot:easy-acceptor (host *, port 4242)>
+
 cl-user> (ql-dist:install-dist "http://localhost:4242/quickdist.txt")
 127.0.0.1 - [2012-11-30 10:46:29] "get /quickdist.txt http/1.1" 200 241 "-" "quicklisp-client/2012112500 SBCL/1.1.0"
 ; Fetching #<url "http://localhost:4242/quickdist.txt">
@@ -64,6 +67,7 @@ Press Enter to continue.
 ==================================================
 132 bytes in 0.00 seconds (128.91KB/sec)
 #<ql-dist:dist quickdist 20121130>
+
 cl-user> (ql:quickload :symbol-namestring) ; for example
 To load "symbol-namestring":
   Load 1 ASDF system:
@@ -78,6 +82,11 @@ To load "symbol-namestring":
 ; Loading "symbol-namestring"
 [package symbol-namestring]
 (:symbol-namestring)
+
 cl-user> (ql-dist:uninstall (ql-dist:find-dist "quickdist")) ; no longer want this dist
 t
 ```
+
+# Priorities of distributions
+
+When multiple distributions provide the same system, the latest installed distribution is prefered by default.  If this is not what you want, you can inspect priorities with `(ql-dist:preference (ql-dist:find-dist "{dist}")))` and set them with `setf`.  For a finer-grained control projects (`ql-dist:find-release-in-dist`) and systems (`ql-dist:find-system-in-dist`) have preferences too.
