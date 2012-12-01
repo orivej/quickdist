@@ -155,8 +155,8 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
     (assert (fad:directory-exists-p projects-path))
     (ensure-directories-exist dist-path :verbose t)
     (ensure-directories-exist archive-path :verbose t)
+    (create-dist projects-path dist-path archive-path archive-url)
     (let ((distinfo (render-template *distinfo-template* template-data)))
-      (dolist (path (list distinfo-path
-                          (make-pathname :name "distinfo" :type "txt" :defaults dist-path)))
-        (write-string-into-file distinfo path :if-exists :supersede)))
-    (create-dist projects-path dist-path archive-path archive-url)))
+      (dolist (path (list (make-pathname :name "distinfo" :type "txt" :defaults dist-path)
+                          distinfo-path))
+        (write-string-into-file distinfo path :if-exists :supersede)))))
