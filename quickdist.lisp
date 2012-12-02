@@ -135,7 +135,7 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
                     (dolist (system-file system-files)
                       (asdf::load-sysdef (pathname-name system-file) system-file)
                       (dolist (system-name (get-systems system-file))
-                        (format system-index "~a ~a ~a~{ ~a~}~%"
+                        (format system-index "~a ~a ~a~{ ~(~a~)~}~%"
                                 project-name (pathname-name system-file) system-name
                                 (system-dependencies system-name)))))))))))))
 
