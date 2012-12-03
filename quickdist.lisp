@@ -74,10 +74,11 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
     out-path))
 
 (defun find-system-files (path)
-  (sort
-   (loop for file in (fad:list-directory path)
-         if (string= "asd" (pathname-type file)) collect file)
-   #'string< :key #'pathname-name))
+  (let ((system-files nil))
+    (flet ((add-system-file (path) (push path system-files))
+           (asd-file-p (path) (string-equal "asd" (pathname-type path))))
+      (fad:walk-directory path #'add-system-file :test #'asd-file-p))
+    (sort system-files #'string< :key #'pathname-name)))
 
 (defun asdf-dependency-name (form)
   (cond
@@ -87,7 +88,7 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
 
 (defun get-systems (asd-path)
   (with-open-file (s asd-path)
-    (let* ((package (make-package (symbol-name (gensym "TMPPKG")) '(:cl :asdf)))
+    (let* ((package (make-package (symbol-name (gensym "TMPPKG")) :use '(:cl :asdf)))
            (*package* package))
       (unwind-protect
            (sort
@@ -105,6 +106,11 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
 
 (defun unix-filename (path)
   (format nil "~a.~a" (pathname-name path) (pathname-type path)))
+
+(defun unix-filename-relative-to (base path)
+  (let ((base-name (princ-to-string (truename base)))
+        (path-name (princ-to-string (truename path))))
+    (subseq path-name (mismatch base-name path-name))))
 
 (defun create-dist (projects-path dist-path archive-path archive-url)
   (with-open-file (release-index (make-pathname :name "releases" :type "txt" :defaults dist-path)
@@ -126,7 +132,7 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
                     (format *error-output* "Processing ~a...~%" project-name)
                     (format release-index "~a ~a ~a ~a ~a ~a~{ ~a~}~%"
                             project-name project-url (file-size tgz-path) (md5sum tgz-path) (tar-content-sha1 tgz-path) project-prefix
-                            (mapcar #'unix-filename system-files))
+                            (mapcar (curry #'unix-filename-relative-to project-path) system-files))
                     (dolist (system-file system-files)
                       (dolist (name-and-dependencies (get-systems system-file))
                         (let ((*print-case* :downcase))
