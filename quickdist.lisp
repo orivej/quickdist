@@ -48,11 +48,6 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
          (date (reverse (subseq time 3 6))))
     (format nil "~{~2,'0d~}" date)))
 
-(defun external-program-word (&rest run-args)
-  (let* ((s (with-output-to-string (out)
-              (apply #'external-program:run (append run-args `(:output ,out))))))
-    (subseq s 0 (position #\Space s))))
-
 (defun md5sum (path)
   (ironclad:byte-array-to-hex-string
    (ironclad:digest-file :md5 path)))
