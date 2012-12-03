@@ -12,6 +12,10 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
 (defparameter *archive-dir-template*   "{dists-dir}/{name}/archive")
 (defparameter *archive-url-template*   "{base-url}/{name}/archive")
 
+(defparameter *md5sum-command* (list "/usr/bin/md5sum" '()))
+(defparameter *sha1sum-command* (list "/usr/bin/sha1sum" '()))
+(defparameter *tar-command* (list "/bin/tar" '()))
+
 (defvar *template-readtable*
   (let ((readtable (copy-readtable)))
     (set-syntax-from-char #\} #\) readtable)
@@ -54,11 +58,17 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
     (subseq s 0 (position #\Space s))))
 
 (defun md5sum (path)
-  (external-program-word "/usr/bin/md5sum" (list (princ-to-string path))))
+  (external-program-word (first *md5sum-command*)
+                         (append (second *md5sum-command*)
+                                 (list (princ-to-string path)))))
 
 (defun tar-content-sha1 (path)
-  (let ((tar (external-program:start "/bin/tar" (list "-xOf" path) :output :stream)))
-    (external-program-word "/usr/bin/sha1sum" nil :input (external-program:process-output-stream tar))))
+  (let ((tar (external-program:start (first *tar-command*)
+                                     (append (second *tar-command*)
+                                             (list "-xOf" path)) :output :stream)))
+    (external-program-word (first *sha1sum-command*)
+                           (second *sha1sum-command*)
+                           :input (external-program:process-output-stream tar))))
 
 (defun last-directory (path)
   (first (last (pathname-directory path))))
@@ -67,9 +77,11 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
   (let* ((mtime (format-date (effective-mtime source-path)))
          (name (format nil "~a-~a" (last-directory source-path) mtime))
          (out-path (make-pathname :name name :type "tgz" :defaults (truename destdir-path))))
-    (external-program:run "/bin/tar" (list "-C" (princ-to-string source-path) "."
-                                           "-czf" (princ-to-string out-path)
-                                           "--transform" (format nil "s#^.#~a#" name))
+    (external-program:run (first *tar-command*)
+                          (append (second *tar-command*)
+                                  (list "-C" (princ-to-string source-path) "."
+                                        "-czf" (princ-to-string out-path)
+                                        "--transform" (format nil "s#^.#~a#" name)))
                           :output *standard-output* :error *error-output*)
     out-path))
 

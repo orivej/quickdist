@@ -17,4 +17,7 @@
            #:*distinfo-file-template*
            #:*dist-dir-template*
            #:*archive-dir-template*
-           #:*archive-url-template*))
+           #:*archive-url-template*
+           #:*md5sum-command*
+           #:*sha1sum-command*
+           #:*tar-command*))
