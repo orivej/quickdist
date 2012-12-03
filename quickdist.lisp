@@ -79,34 +79,29 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
          if (string= "asd" (pathname-type file)) collect file)
    #'string< :key #'pathname-name))
 
-(defvar *safe-readtable*
-  (let ((readtable (copy-readtable)))
-    (flet ((read* (stream &rest ignore)
-             (declare (ignore ignore))
-             (read stream nil (values) t)))
-      (set-dispatch-macro-character #\# #\. #'read* readtable))
-    readtable))
+(defun asdf-dependency-name (form)
+  (cond
+    ((and (listp form) (eq :version (first form)))
+     (second form))
+    (t form)))
 
-(defun get-systems (path)
-  (with-open-file (s path)
-    (let* ((package (make-package (symbol-name (gensym "TMPPKG"))))
-           (*package* package)
-           (*readtable* *safe-readtable*))
+(defun get-systems (asd-path)
+  (with-open-file (s asd-path)
+    (let* ((package (make-package (symbol-name (gensym "TMPPKG")) '(:cl :asdf)))
+           (*package* package))
       (unwind-protect
            (sort
-            (loop for form = (read s nil)
+            (loop for form = (quickdist-reader:safe-read s nil)
                   while form
                   when (and (symbolp (car form))
                             (equalp "defsystem" (symbol-name (car form))))
-                  collect (string-downcase (string (cadr form))))
-            #'string<)
+                  collect (list* (cadr form)
+                                 (sort (mapcar #'asdf-dependency-name
+                                               (append (getf form :defsystem-depends-on)
+                                                       (getf form :depends-on)))
+                                       #'string-lessp)))
+            #'string-lessp :key #'first)
         (delete-package package)))))
-
-(defun system-dependencies (system-designator)
-  (sort
-   (let ((system (asdf:find-system system-designator)))
-     (flatten (rest (assoc 'asdf:load-op (asdf:component-depends-on 'asdf:load-op system)))))
-   'string<))
 
 (defun unix-filename (path)
   (format nil "~a.~a" (pathname-name path) (pathname-type path)))
@@ -133,11 +128,11 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
                             project-name project-url (file-size tgz-path) (md5sum tgz-path) (tar-content-sha1 tgz-path) project-prefix
                             (mapcar #'unix-filename system-files))
                     (dolist (system-file system-files)
-                      (asdf::load-sysdef (pathname-name system-file) system-file)
-                      (dolist (system-name (get-systems system-file))
-                        (format system-index "~a ~a ~a~{ ~(~a~)~}~%"
-                                project-name (pathname-name system-file) system-name
-                                (system-dependencies system-name)))))))))))))
+                      (dolist (name-and-dependencies (get-systems system-file))
+                        (let ((*print-case* :downcase))
+                          (format system-index "~a ~a ~a~{ ~a~}~%"
+                                  project-name (pathname-name system-file) (first name-and-dependencies)
+                                  (rest name-and-dependencies))))))))))))))
 
 (defun quickdist (&key name (version :today) base-url projects-dir dists-dir)
   (let* ((version (if (not (eq version :today)) version (format-date (get-universal-time))))
