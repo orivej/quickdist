@@ -1,4 +1,7 @@
 (asdf:defsystem quickdist
+  :description "Create a Quicklisp distribution from a directory of local projects."
+  :author "Orivej Desh <orivej@gmx.fr>"
+  :licence "Unlicense <http://unlicense.org/UNLICENSE>"
   :depends-on (alexandria
                cl-fad
                external-program babel-streams ironclad

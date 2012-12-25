@@ -1,6 +1,6 @@
 # Overview
 
-Quickdist creates and updates Quicklisp distributions from a directory of local projects.  It maintains distinfo.txt, releases.txt, systems.txt and source archive - all that is needed for a distribution.  Currently it requires /bin/tar to work.
+Quickdist creates and updates Quicklisp distributions from a directory of local projects.  It maintains distinfo.txt, releases.txt, systems.txt and source archive - all that is needed for a distribution.  Currently it requires GNU tar to work.  (Configurable with `*gnutar*`, defaults to `/bin/tar`.)
 
 # API
 
