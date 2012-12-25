@@ -12,6 +12,9 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
 (defparameter *archive-dir-template*   "{dists-dir}/{name}/archive")
 (defparameter *archive-url-template*   "{base-url}/{name}/archive")
 
+(defparameter *gnutar* "/bin/tar"
+  "Location of the GNU TAR program")
+
 (defvar *template-readtable*
   (let ((readtable (copy-readtable)))
     (set-syntax-from-char #\} #\) readtable)
@@ -54,7 +57,7 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
 
 (defun tar-content-sha1 (path)
   (let ((octets (babel-streams:with-output-to-sequence (buffer)
-                  (external-program:run "/bin/tar" (list "-xOf" path) :output buffer))))
+                  (external-program:run *gnutar* (list "-xOf" path) :output buffer))))
     (ironclad:byte-array-to-hex-string
      (ironclad:digest-sequence :sha1 (copy-seq octets)))))
 
@@ -65,7 +68,7 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
   (let* ((mtime (format-date (effective-mtime source-path)))
          (name (format nil "~a-~a" (last-directory source-path) mtime))
          (out-path (make-pathname :name name :type "tgz" :defaults (truename destdir-path))))
-    (external-program:run "/bin/tar" (list "-C" (namestring source-path) "."
+    (external-program:run *gnutar* (list "-C" (namestring source-path) "."
                                            "-czf" (namestring out-path)
                                            "--transform" (format nil "s#^.#~a#" name))
                           :output *standard-output* :error *error-output*)
