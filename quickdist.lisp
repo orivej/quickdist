@@ -67,7 +67,7 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
 (defun native-namestring (path)
   #+ccl(ccl:native-translated-namestring path)
   #+sbcl(sb-ext:native-namestring path)
-  #-(or ccl sbcl)(native-namestring path))
+  #-(or ccl sbcl)(namestring path))
 
 (defun archive (destdir-path source-path)
   (let* ((mtime (format-date (effective-mtime source-path)))
