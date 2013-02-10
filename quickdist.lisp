@@ -64,12 +64,17 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
 (defun last-directory (path)
   (first (last (pathname-directory path))))
 
+(defun native-namestring (path)
+  #+ccl(ccl:native-translated-namestring path)
+  #+sbcl(sb-ext:native-namestring path)
+  #-(or ccl sbcl)(native-namestring path))
+
 (defun archive (destdir-path source-path)
   (let* ((mtime (format-date (effective-mtime source-path)))
          (name (format nil "~a-~a" (last-directory source-path) mtime))
          (out-path (make-pathname :name name :type "tgz" :defaults (truename destdir-path))))
-    (external-program:run *gnutar* (list "-C" (namestring source-path) "."
-                                           "-czf" (namestring out-path)
+    (external-program:run *gnutar* (list "-C" (native-namestring source-path) "."
+                                           "-czf" (native-namestring out-path)
                                            "--transform" (format nil "s#^.#~a#" name))
                           :output *standard-output* :error *error-output*)
     out-path))
@@ -109,8 +114,8 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
   (format nil "~a.~a" (pathname-name path) (pathname-type path)))
 
 (defun unix-filename-relative-to (base path)
-  (let ((base-name (namestring (truename base)))
-        (path-name (namestring (truename path))))
+  (let ((base-name (native-namestring (truename base)))
+        (path-name (native-namestring (truename path))))
     (subseq path-name (mismatch base-name path-name))))
 
 (defun create-dist (projects-path dist-path archive-path archive-url)
@@ -146,7 +151,7 @@ system-index-url: {base-url}/{name}/{version}/systems.txt
          (projects-path (fad:pathname-as-directory projects-dir))
          (template-data (list :name name :version version
                               :base-url (string-right-trim "/" base-url)
-                              :dists-dir (string-right-trim "/" (namestring dists-dir))))
+                              :dists-dir (string-right-trim "/" (native-namestring dists-dir))))
          (distinfo-path (fad:pathname-as-file (render-template *distinfo-file-template* template-data)))
          (dist-path (fad:pathname-as-directory (render-template *dist-dir-template* template-data)))
          (archive-path (fad:pathname-as-directory (render-template *archive-dir-template* template-data)))
