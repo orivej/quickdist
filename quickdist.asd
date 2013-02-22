@@ -10,4 +10,5 @@
   :serial t
   :components ((:file "package")
                (:file "quickdist-reader")
-               (:file "quickdist")))
+               (:file "quickdist")
+               (:file "reader-patches")))
